@@ -1,0 +1,255 @@
+-- SOMNANGKH122's Dead Rails Script Hub
+-- Made by SOMNANGKH122
+-- Features: KillAura, Bring (Item TP), Refresh Items, WalkSpeed, ESP (Enemies, Items, Zombies)
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "SOMNANGKH122 Hub - Dead Rails",
+    LoadingTitle = "Loading SOMNANGKH122 Hub...",
+    LoadingSubtitle = "by SOMNANGKH122",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "SOMNANGKH122Hub",
+        FileName = "DeadRailsConfig"
+    },
+    Discord = {
+        Enabled = false,
+        Invite = "",
+        RememberJoins = true
+    },
+    KeySystem = false
+})
+
+local CombatTab = Window:CreateTab("Combat", 4483362458)
+local MovementTab = Window:CreateTab("Movement", 4483362458)
+local VisualsTab = Window:CreateTab("Visuals", 4483362458)
+local ItemsTab = Window:CreateTab("Items", 4483362458)
+
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local RootPart = Character:WaitForChild("HumanoidRootPart")
+
+-- ESP Setup using simple Drawing (inspired by common ESP scripts)
+local ESPConnections = {}
+local ESPObjects = {}
+
+local function CreateESP(object, text, color)
+    local billboard = Instance.new("BillboardGui")
+    billboard.Size = UDim2.new(0, 100, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 2, 0)
+    billboard.Adornee = object
+    billboard.Parent = object
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = color
+    label.TextStrokeTransparency = 0
+    label.TextScaled = true
+    label.Font = Enum.Font.SourceSansBold
+    label.Parent = billboard
+
+    ESPObjects[object] = {billboard, label}
+end
+
+local function RemoveESP(object)
+    if ESPObjects[object] then
+        ESPObjects[object][1]:Destroy()
+        ESPObjects[object] = nil
+    end
+end
+
+local function ToggleESP(enabled, filterFunc, textFunc, color)
+    for _, connection in pairs(ESPConnections) do
+        connection:Disconnect()
+    end
+    ESPConnections = {}
+
+    if enabled then
+        local heartbeatConn
+        heartbeatConn = RunService.Heartbeat:Connect(function()
+            for _, obj in pairs(Workspace:GetDescendants()) do
+                if filterFunc(obj) and obj.Parent then
+                    if not ESPObjects[obj] then
+                        local text = textFunc(obj)
+                        CreateESP(obj, text, color)
+                    end
+                else
+                    RemoveESP(obj)
+                end
+            end
+        end)
+        table.insert(ESPConnections, heartbeatConn)
+    end
+end
+
+-- KillAura
+local KillAuraEnabled = false
+local KillAuraRange = 20
+
+local KillAuraToggle = CombatTab:CreateToggle({
+    Name = "KillAura",
+    CurrentValue = false,
+    Flag = "KillAuraToggle",
+    Callback = function(Value)
+        KillAuraEnabled = Value
+    end,
+})
+
+local KillAuraSlider = CombatTab:CreateSlider({
+    Name = "Range",
+    Range = {1, 100},
+    Increment = 1,
+    CurrentValue = 20,
+    Flag = "KillAuraRange",
+    Callback = function(Value)
+        KillAuraRange = Value
+    end,
+})
+
+-- KillAura Loop
+spawn(function()
+    while true do
+        wait(0.1)
+        if KillAuraEnabled then
+            for _, player in pairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    local distance = (RootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+                    if distance <= KillAuraRange then
+                        -- Simulate attack - adjust for Dead Rails (e.g., fire tool or damage)
+                        -- For generic: player.Character.Humanoid.Health = 0
+                        -- Placeholder: assume melee or gun
+                        local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+                        if tool then
+                            tool:Activate()
+                        end
+                    end
+                end
+            end
+            -- For zombies/NPCs
+            for _, npc in pairs(Workspace:GetDescendants()) do
+                if npc:IsA("Model") and npc:FindFirstChild("Humanoid") and npc:FindFirstChild("HumanoidRootPart") and npc.Name:lower():find("zombie") then
+                    local distance = (RootPart.Position - npc.HumanoidRootPart.Position).Magnitude
+                    if distance <= KillAuraRange then
+                        npc.Humanoid.Health = 0
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- WalkSpeed
+local WalkSpeedValue = 16
+
+local WalkSpeedSlider = MovementTab:CreateSlider({
+    Name = "WalkSpeed",
+    Range = {16, 100},
+    Increment = 1,
+    CurrentValue = 16,
+    Flag = "WalkSpeedSlider",
+    Callback = function(Value)
+        WalkSpeedValue = Value
+        if Character and Humanoid then
+            Humanoid.WalkSpeed = Value
+        end
+    end,
+})
+
+-- Update WalkSpeed on spawn
+LocalPlayer.CharacterAdded:Connect(function(newChar)
+    Character = newChar
+    Humanoid = Character:WaitForChild("Humanoid")
+    Humanoid.WalkSpeed = WalkSpeedValue
+end)
+
+-- ESP Enemies/Zombies
+local EnemyESPEnabled = false
+
+local EnemyESPToggle = VisualsTab:CreateToggle({
+    Name = "ESP Enemies & Zombies",
+    CurrentValue = false,
+    Flag = "EnemyESPToggle",
+    Callback = function(Value)
+        EnemyESPEnabled = Value
+        ToggleESP(Value, function(obj)
+            return obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") and 
+                   (Players:GetPlayerFromCharacter(obj) ~= LocalPlayer and Players:GetPlayerFromCharacter(obj) ~= nil or 
+                    obj.Name:lower():find("zombie") or obj.Name:lower():find("enemy"))
+        end, function(obj)
+            local player = Players:GetPlayerFromCharacter(obj)
+            if player then
+                return player.Name .. " [" .. math.floor((RootPart.Position - obj.HumanoidRootPart.Position).Magnitude) .. "]"
+            else
+                return obj.Name .. " [Zombie]"
+            end
+        end, Color3.fromRGB(255, 0, 0))
+    end,
+})
+
+-- ESP Items
+local ItemESPEnabled = false
+
+local ItemESPToggle = VisualsTab:CreateToggle({
+    Name = "ESP Items",
+    CurrentValue = false,
+    Flag = "ItemESPToggle",
+    Callback = function(Value)
+        ItemESPEnabled = Value
+        ToggleESP(Value, function(obj)
+            return obj:IsA("BasePart") and obj.Name:lower():find("item") or obj.Parent:IsA("Model") and obj.Parent.Name:lower():find("item")
+        end, function(obj)
+            return obj.Name
+        end, Color3.fromRGB(0, 255, 0))
+    end,
+})
+
+-- Items: Bring (Teleport Item to Player)
+local BringSection = ItemsTab:CreateSection("Bring Items")
+
+local ItemList = ItemsTab:CreateDropdown({
+    Name = "Select Item",
+    Options = {"Refresh"},
+    CurrentOption = "None",
+    Flag = "ItemDropdown",
+    Callback = function(Option)
+        -- Bring logic
+        if Option ~= "None" then
+            for _, item in pairs(Workspace:GetDescendants()) do
+                if item.Name == Option and item:IsA("BasePart") then
+                    item.CFrame = RootPart.CFrame
+                    break
+                end
+            end
+        end
+    end,
+})
+
+local RefreshButton = ItemsTab:CreateButton({
+    Name = "Refresh Items",
+    Callback = function()
+        local items = {}
+        for _, obj in pairs(Workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and (obj.Name:lower():find("item") or obj.Parent:IsA("Model") and obj.Parent.Name:lower():find("item")) then
+                table.insert(items, obj.Name)
+            end
+        end
+        ItemList:Refresh(items, true)
+    end,
+})
+
+Rayfield:Notify({
+    Title = "SOMNANGKH122 Hub Loaded!",
+    Content = "Enjoy Dead Rails with these features. Made by SOMNANGKH122.",
+    Duration = 5,
+    Image = 4483362458,
+})
