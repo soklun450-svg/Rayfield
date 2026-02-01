@@ -1,255 +1,301 @@
--- SOMNANGKH122's Dead Rails Script Hub
--- Made by SOMNANGKH122
--- Features: KillAura, Bring (Item TP), Refresh Items, WalkSpeed, ESP (Enemies, Items, Zombies)
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-
-local Window = Rayfield:CreateWindow({
-    Name = "SOMNANGKH122 Hub - Dead Rails",
-    LoadingTitle = "Loading SOMNANGKH122 Hub...",
-    LoadingSubtitle = "by SOMNANGKH122",
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "SOMNANGKH122Hub",
-        FileName = "DeadRailsConfig"
-    },
-    Discord = {
-        Enabled = false,
-        Invite = "",
-        RememberJoins = true
-    },
-    KeySystem = false
+local Window = WindUI:CreateWindow({
+    Title = "SLN Hub",
+    Icon = "door-open", -- lucide icon. optional
+    Author = "by SELENA_GAMING", -- optional
 })
 
-local CombatTab = Window:CreateTab("Combat", 4483362458)
-local MovementTab = Window:CreateTab("Movement", 4483362458)
-local VisualsTab = Window:CreateTab("Visuals", 4483362458)
-local ItemsTab = Window:CreateTab("Items", 4483362458)
+--createPopup()
 
--- Services
+--Window:SetUIScale(.8)
+
+-- */  Tags  /* --
+do
+    Window:Tag({
+        Title = "v1.1" .. WindUI.Version,
+        Icon = "github",
+        Color = Color3.fromHex("#1c1c1c"),
+        Border = true,
+    })
+end
+
+-- */  Theme (soon)  /* --
+do
+    --[[WindUI:AddTheme({
+        Name = "Stylish",
+        
+        Accent = Color3.fromHex("#3b82f6"), 
+        Dialog = Color3.fromHex("#1a1a1a"), 
+        Outline = Color3.fromHex("#3b82f6"),
+        Text = Color3.fromHex("#f8fafc"),  
+        Placeholder = Color3.fromHex("#94a3b8"),
+        Button = Color3.fromHex("#334155"), 
+        Icon = Color3.fromHex("#60a5fa"), 
+        
+        WindowBackground = Color3.fromHex("#0f172a"),
+        
+        TopbarButtonIcon = Color3.fromHex("#60a5fa"),
+        TopbarTitle = Color3.fromHex("#f8fafc"),
+        TopbarAuthor = Color3.fromHex("#94a3b8"),
+        TopbarIcon = Color3.fromHex("#3b82f6"),
+        
+        TabBackground = Color3.fromHex("#1e293b"),    
+        TabTitle = Color3.fromHex("#f8fafc"),
+        TabIcon = Color3.fromHex("#60a5fa"),
+        
+        ElementBackground = Color3.fromHex("#1e293b"),
+        ElementTitle = Color3.fromHex("#f8fafc"),
+        ElementDesc = Color3.fromHex("#cbd5e1"),
+        ElementIcon = Color3.fromHex("#60a5fa"),
+    })--]]
+    
+    -- WindUI:SetTheme("Stylish")
+end
+
+
+-- */  Colors  /* --
+local Purple = Color3.fromHex("#7775F2")
+local Yellow = Color3.fromHex("#ECA201")
+local Green = Color3.fromHex("#10C550")
+local Grey = Color3.fromHex("#83889E")
+local Blue = Color3.fromHex("#257AF7")
+local Red = Color3.fromHex("#EF4F1D")
+
+
+-- */ Other Functions /* --
+local function parseJSON(luau_table, indent, level, visited)
+    indent = indent or 2
+    level = level or 0
+    visited = visited or {}
+    
+    local currentIndent = string.rep(" ", level * indent)
+    local nextIndent = string.rep(" ", (level + 1) * indent)
+    
+    if luau_table == nil then
+        return "null"
+    end
+    
+    local dataType = type(luau_table)
+    
+    if dataType == "table" then
+        if visited[luau_table] then
+            return "\"[Circular Reference]\""
+        end
+        
+        visited[luau_table] = true
+        
+        local isArray = true
+        local maxIndex = 0
+        
+        for k, _ in pairs(luau_table) do
+            if type(k) == "number" and k > maxIndex then
+                maxIndex = k
+            end
+            if type(k) ~= "number" or k <= 0 or math.floor(k) ~= k then
+                isArray = false
+                break
+            end
+        end
+        
+        local count = 0
+        for _ in pairs(luau_table) do
+            count = count + 1
+        end
+        if count ~= maxIndex and isArray then
+            isArray = false
+        end
+        
+        if count == 0 then
+            return "{}"
+        end
+        
+        if isArray then
+            if count == 0 then
+                return "[]"
+            end
+            
+            local result = "[\n"
+            
+            for i = 1, maxIndex do
+                result = result .. nextIndent .. parseJSON(luau_table[i], indent, level + 1, visited)
+                if i < maxIndex then
+                    result = result .. ","
+                end
+                result = result .. "\n"
+            end
+            
+            result = result .. currentIndent .. "]"
+            return result
+        else
+            local result = "{\n"
+            local first = true
+            
+            local keys = {}
+            for k in pairs(luau_table) do
+                table.insert(keys, k)
+            end
+            table.sort(keys, function(a, b)
+                if type(a) == type(b) then
+                    return tostring(a) < tostring(b)
+                else
+                    return type(a) < type(b)
+                end
+            end)
+            
+            for _, k in ipairs(keys) do
+                local v = luau_table[k]
+                if not first then
+                    result = result .. ",\n"
+                else
+                    first = false
+                end
+                
+                if type(k) == "string" then
+                    result = result .. nextIndent .. "\"" .. k .. "\": "
+                else
+                    result = result .. nextIndent .. "\"" .. tostring(k) .. "\": "
+                end
+                
+                result = result .. parseJSON(v, indent, level + 1, visited)
+            end
+            
+            result = result .. "\n" .. currentIndent .. "}"
+            return result
+        end
+    elseif dataType == "string" then
+        local escaped = luau_table:gsub("\\", "\\\\")
+        escaped = escaped:gsub("\"", "\\\"")
+        escaped = escaped:gsub("\n", "\\n")
+        escaped = escaped:gsub("\r", "\\r")
+        escaped = escaped:gsub("\t", "\\t")
+        
+        return "\"" .. escaped .. "\""
+    elseif dataType == "number" then
+        return tostring(luau_table)
+    elseif dataType == "boolean" then
+        return luau_table and "true" or "false"
+    elseif dataType == "function" then
+        return "\"function\""
+    else
+        return "\"" .. dataType .. "\""
+    end
+end
+
+local function tableToClipboard(luau_table, indent)
+    indent = indent or 4
+    local jsonString = parseJSON(luau_table, indent)
+    setclipboard(jsonString)
+    return jsonString
+end
+
+local Tab = Window:Tab({
+    Title = "Destroy hub",
+    Icon = "settings", -- optional
+    IconColor = Grey,
+    IconShape = "Square",
+    Border = true,
+    Locked = false,
+})
+
+local Button = Tab:Button({
+    Title = "Destroy Hub",
+    Color = Color3.fromHex("#a2ff30"), -- paint the button
+    Justify = "Center", -- align items in the center (Center or Between or Left or Right)
+    IconAlign = "Left", -- Left or Right of the text
+    Icon = "", -- removing icon
+    Callback = function()
+        Window:Destroy()
+    end
+})
+
+local Tab = Window:Tab({
+    Title = "Main farm & other farm",
+    Icon = "solar:home-2-bold", -- optional
+    IconColor = Green,
+    IconShape = "Square",
+    Border = true,
+    Locked = false,
+})
+
+local Section = Tab:Section({ 
+    Title = "Main",
+})
+
+--// Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local Humanoid = Character:WaitForChild("Humanoid")
-local RootPart = Character:WaitForChild("HumanoidRootPart")
+local Character, HumanoidRootPart
 
--- ESP Setup using simple Drawing (inspired by common ESP scripts)
-local ESPConnections = {}
-local ESPObjects = {}
+--// State
+local NoClipEnabled = false
+local NoClipConnection
 
-local function CreateESP(object, text, color)
-    local billboard = Instance.new("BillboardGui")
-    billboard.Size = UDim2.new(0, 100, 0, 50)
-    billboard.StudsOffset = Vector3.new(0, 2, 0)
-    billboard.Adornee = object
-    billboard.Parent = object
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = color
-    label.TextStrokeTransparency = 0
-    label.TextScaled = true
-    label.Font = Enum.Font.SourceSansBold
-    label.Parent = billboard
-
-    ESPObjects[object] = {billboard, label}
+--// Get character safely
+local function setupCharacter(char)
+	Character = char
+	HumanoidRootPart = char:WaitForChild("HumanoidRootPart", 5)
 end
 
-local function RemoveESP(object)
-    if ESPObjects[object] then
-        ESPObjects[object][1]:Destroy()
-        ESPObjects[object] = nil
-    end
+if LocalPlayer.Character then
+	setupCharacter(LocalPlayer.Character)
 end
 
-local function ToggleESP(enabled, filterFunc, textFunc, color)
-    for _, connection in pairs(ESPConnections) do
-        connection:Disconnect()
-    end
-    ESPConnections = {}
+LocalPlayer.CharacterAdded:Connect(setupCharacter)
 
-    if enabled then
-        local heartbeatConn
-        heartbeatConn = RunService.Heartbeat:Connect(function()
-            for _, obj in pairs(Workspace:GetDescendants()) do
-                if filterFunc(obj) and obj.Parent then
-                    if not ESPObjects[obj] then
-                        local text = textFunc(obj)
-                        CreateESP(obj, text, color)
-                    end
-                else
-                    RemoveESP(obj)
-                end
-            end
-        end)
-        table.insert(ESPConnections, heartbeatConn)
-    end
+--// Enable NoClip
+local function enableNoClip()
+	if NoClipConnection then return end
+
+	NoClipConnection = RunService.Stepped:Connect(function()
+		if Character then
+			for _, part in ipairs(Character:GetDescendants()) do
+				if part:IsA("BasePart") then
+					part.CanCollide = false
+				end
+			end
+		end
+	end)
 end
 
--- KillAura
-local KillAuraEnabled = false
-local KillAuraRange = 20
+--// Disable NoClip
+local function disableNoClip()
+	if NoClipConnection then
+		NoClipConnection:Disconnect()
+		NoClipConnection = nil
+	end
 
-local KillAuraToggle = CombatTab:CreateToggle({
-    Name = "KillAura",
-    CurrentValue = false,
-    Flag = "KillAuraToggle",
-    Callback = function(Value)
-        KillAuraEnabled = Value
-    end,
+	if Character then
+		for _, part in ipairs(Character:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = true
+			end
+		end
+	end
+end
+
+--// WindUI Toggle
+local Toggle = Section:Toggle({
+	Title = "No Clip",
+	Desc = "Walk through walls",
+	Icon = "ghost",
+	Type = "Toggle",
+	Value = false,
+	Callback = function(state)
+		NoClipEnabled = state
+		if state then
+			enableNoClip()
+		else
+			disableNoClip()
+		end
+	end
 })
 
-local KillAuraSlider = CombatTab:CreateSlider({
-    Name = "Range",
-    Range = {1, 100},
-    Increment = 1,
-    CurrentValue = 20,
-    Flag = "KillAuraRange",
-    Callback = function(Value)
-        KillAuraRange = Value
-    end,
-})
-
--- KillAura Loop
-spawn(function()
-    while true do
-        wait(0.1)
-        if KillAuraEnabled then
-            for _, player in pairs(Players:GetPlayers()) do
-                if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    local distance = (RootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
-                    if distance <= KillAuraRange then
-                        -- Simulate attack - adjust for Dead Rails (e.g., fire tool or damage)
-                        -- For generic: player.Character.Humanoid.Health = 0
-                        -- Placeholder: assume melee or gun
-                        local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-                        if tool then
-                            tool:Activate()
-                        end
-                    end
-                end
-            end
-            -- For zombies/NPCs
-            for _, npc in pairs(Workspace:GetDescendants()) do
-                if npc:IsA("Model") and npc:FindFirstChild("Humanoid") and npc:FindFirstChild("HumanoidRootPart") and npc.Name:lower():find("zombie") then
-                    local distance = (RootPart.Position - npc.HumanoidRootPart.Position).Magnitude
-                    if distance <= KillAuraRange then
-                        npc.Humanoid.Health = 0
-                    end
-                end
-            end
-        end
-    end
-end)
-
--- WalkSpeed
-local WalkSpeedValue = 16
-
-local WalkSpeedSlider = MovementTab:CreateSlider({
-    Name = "WalkSpeed",
-    Range = {16, 100},
-    Increment = 1,
-    CurrentValue = 16,
-    Flag = "WalkSpeedSlider",
-    Callback = function(Value)
-        WalkSpeedValue = Value
-        if Character and Humanoid then
-            Humanoid.WalkSpeed = Value
-        end
-    end,
-})
-
--- Update WalkSpeed on spawn
-LocalPlayer.CharacterAdded:Connect(function(newChar)
-    Character = newChar
-    Humanoid = Character:WaitForChild("Humanoid")
-    Humanoid.WalkSpeed = WalkSpeedValue
-end)
-
--- ESP Enemies/Zombies
-local EnemyESPEnabled = false
-
-local EnemyESPToggle = VisualsTab:CreateToggle({
-    Name = "ESP Enemies & Zombies",
-    CurrentValue = false,
-    Flag = "EnemyESPToggle",
-    Callback = function(Value)
-        EnemyESPEnabled = Value
-        ToggleESP(Value, function(obj)
-            return obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") and 
-                   (Players:GetPlayerFromCharacter(obj) ~= LocalPlayer and Players:GetPlayerFromCharacter(obj) ~= nil or 
-                    obj.Name:lower():find("zombie") or obj.Name:lower():find("enemy"))
-        end, function(obj)
-            local player = Players:GetPlayerFromCharacter(obj)
-            if player then
-                return player.Name .. " [" .. math.floor((RootPart.Position - obj.HumanoidRootPart.Position).Magnitude) .. "]"
-            else
-                return obj.Name .. " [Zombie]"
-            end
-        end, Color3.fromRGB(255, 0, 0))
-    end,
-})
-
--- ESP Items
-local ItemESPEnabled = false
-
-local ItemESPToggle = VisualsTab:CreateToggle({
-    Name = "ESP Items",
-    CurrentValue = false,
-    Flag = "ItemESPToggle",
-    Callback = function(Value)
-        ItemESPEnabled = Value
-        ToggleESP(Value, function(obj)
-            return obj:IsA("BasePart") and obj.Name:lower():find("item") or obj.Parent:IsA("Model") and obj.Parent.Name:lower():find("item")
-        end, function(obj)
-            return obj.Name
-        end, Color3.fromRGB(0, 255, 0))
-    end,
-})
-
--- Items: Bring (Teleport Item to Player)
-local BringSection = ItemsTab:CreateSection("Bring Items")
-
-local ItemList = ItemsTab:CreateDropdown({
-    Name = "Select Item",
-    Options = {"Refresh"},
-    CurrentOption = "None",
-    Flag = "ItemDropdown",
-    Callback = function(Option)
-        -- Bring logic
-        if Option ~= "None" then
-            for _, item in pairs(Workspace:GetDescendants()) do
-                if item.Name == Option and item:IsA("BasePart") then
-                    item.CFrame = RootPart.CFrame
-                    break
-                end
-            end
-        end
-    end,
-})
-
-local RefreshButton = ItemsTab:CreateButton({
-    Name = "Refresh Items",
-    Callback = function()
-        local items = {}
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("BasePart") and (obj.Name:lower():find("item") or obj.Parent:IsA("Model") and obj.Parent.Name:lower():find("item")) then
-                table.insert(items, obj.Name)
-            end
-        end
-        ItemList:Refresh(items, true)
-    end,
-})
-
-Rayfield:Notify({
-    Title = "SOMNANGKH122 Hub Loaded!",
-    Content = "Enjoy Dead Rails with these features. Made by SOMNANGKH122.",
-    Duration = 5,
-    Image = 4483362458,
+WindUI:Notify({
+    Title = "SLN Hub",
+    Content = "",
+    Duration = 1, -- 3 seconds
+    Icon = "solar:check-square-bold",
 })
