@@ -210,9 +210,9 @@ local Button = Tab:Button({
 })
 
 local Tab = Window:Tab({
-    Title = "Main farm & other farm",
+    Title = "Main farm",
     Icon = "solar:home-2-bold", -- optional
-    IconColor = Green,
+    IconColor = Yellow,
     IconShape = "Square",
     Border = true,
     Locked = false,
@@ -224,24 +224,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- state
 local AutoFarmEat = false
 
--- cached objects (speed)
-local ExercisePart = workspace
-	:WaitForChild("World")
-	:WaitForChild("World2")
-	:WaitForChild("Area7")
-	:WaitForChild("Exercise")
-	:WaitForChild("\232\140\132\229\173\144")
+-- cached paths (IMPORTANT for speed)
+local ExercisePart = workspace.World.World2.Area7.Exercise["\232\140\132\229\173\144"]
 
-local Remote = ReplicatedStorage
-	:WaitForChild("Remote")
-	:WaitForChild("Event")
-	:WaitForChild("Game")
-	:WaitForChild("[C-S]PlayerExercise")
+local Remote = ReplicatedStorage.Remote.Event.Game["[C-S]PlayerExercise"]
 
--- WindUI toggle
-local Toggle = Tab:Toggle({
-    Title = "Auto Eat",
-    Desc = "Auto Exercise Eat",
+-- WindUI Toggle
+Tab:Toggle({
+    Title = "Auto Farm Eat (FAST)",
+    Desc = "Auto Eat latest Area",
     Icon = "",
     Type = "Toggle",
     Value = false,
@@ -250,15 +241,14 @@ local Toggle = Tab:Toggle({
 
         if state then
             task.spawn(function()
-                while task.wait() do
-                    if not AutoFarmEat then break end
+                while AutoFarmEat and task.wait() do
+                    -- spam fast like redzlib v5
                     Remote:FireServer(ExercisePart)
                 end
             end)
         end
     end
 })
-
 WindUI:Notify({
     Title = "SLN Hub",
     Content = "",
