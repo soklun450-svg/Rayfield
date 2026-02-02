@@ -218,79 +218,45 @@ local Tab = Window:Tab({
     Locked = false,
 })
 
-local Section = Tab:Section({ 
-    Title = "Main",
-})
+-- services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
---// Services
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
+-- state
+local AutoFarmEat = false
 
-local LocalPlayer = Players.LocalPlayer
-local Character, HumanoidRootPart
+-- cached objects (speed)
+local ExercisePart = workspace
+	:WaitForChild("World")
+	:WaitForChild("World2")
+	:WaitForChild("Area7")
+	:WaitForChild("Exercise")
+	:WaitForChild("\232\140\132\229\173\144")
 
---// State
-local NoClipEnabled = false
-local NoClipConnection
+local Remote = ReplicatedStorage
+	:WaitForChild("Remote")
+	:WaitForChild("Event")
+	:WaitForChild("Game")
+	:WaitForChild("[C-S]PlayerExercise")
 
---// Get character safely
-local function setupCharacter(char)
-	Character = char
-	HumanoidRootPart = char:WaitForChild("HumanoidRootPart", 5)
-end
+-- WindUI toggle
+local Toggle = Tab:Toggle({
+    Title = "Auto Eat",
+    Desc = "Auto Exercise Eat",
+    Icon = "",
+    Type = "Toggle",
+    Value = false,
+    Callback = function(state)
+        AutoFarmEat = state
 
-if LocalPlayer.Character then
-	setupCharacter(LocalPlayer.Character)
-end
-
-LocalPlayer.CharacterAdded:Connect(setupCharacter)
-
---// Enable NoClip
-local function enableNoClip()
-	if NoClipConnection then return end
-
-	NoClipConnection = RunService.Stepped:Connect(function()
-		if Character then
-			for _, part in ipairs(Character:GetDescendants()) do
-				if part:IsA("BasePart") then
-					part.CanCollide = false
-				end
-			end
-		end
-	end)
-end
-
---// Disable NoClip
-local function disableNoClip()
-	if NoClipConnection then
-		NoClipConnection:Disconnect()
-		NoClipConnection = nil
-	end
-
-	if Character then
-		for _, part in ipairs(Character:GetDescendants()) do
-			if part:IsA("BasePart") then
-				part.CanCollide = true
-			end
-		end
-	end
-end
-
---// WindUI Toggle
-local Toggle = Section:Toggle({
-	Title = "No Clip",
-	Desc = "Walk through walls",
-	Icon = "ghost",
-	Type = "Toggle",
-	Value = false,
-	Callback = function(state)
-		NoClipEnabled = state
-		if state then
-			enableNoClip()
-		else
-			disableNoClip()
-		end
-	end
+        if state then
+            task.spawn(function()
+                while task.wait() do
+                    if not AutoFarmEat then break end
+                    Remote:FireServer(ExercisePart)
+                end
+            end)
+        end
+    end
 })
 
 WindUI:Notify({
