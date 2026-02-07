@@ -67,7 +67,7 @@ local Window = WindUI:CreateWindow({
 -- */  Tags  /* --
 do
     Window:Tag({
-        Title = "v1.1" .. WindUI.Version,
+        Title = "v1.2" .. WindUI.Version,
         Icon = "github",
         Color = Color3.fromHex("#1c1c1c"),
         Border = true,
