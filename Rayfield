@@ -53,7 +53,7 @@ local Window = WindUI:CreateWindow({
         URL = "https://pastebin.com/pxSL9EZr",
         
         -- ↓ Optional. You can remove it.
-        SaveKey = false, -- automatically save and load the key.
+        SaveKey = true, -- automatically save and load the key.
         
         -- ↓ Optional. You can remove it.
         -- API = {} ← Services. Read about it below ↓
@@ -277,40 +277,55 @@ local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 
 local PlaceId = game.PlaceId
-local ServerCache = {}
+local VisitedServers = {}
 
-local function GetAge(started)
-    return math.floor((os.time() - started) / 60)
-end
-
-local function FetchServers()
-    ServerCache = {}
-
+local function GetServers()
+    local servers = {}
     local url = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
     local data = HttpService:JSONDecode(game:HttpGet(url))
 
     for _, s in ipairs(data.data) do
-        table.insert(ServerCache, {
+        local age = math.floor((os.time() - s.started) / 60)
+
+        table.insert(servers, {
             id = s.id,
             players = s.playing .. "/" .. s.maxPlayers,
-            age = GetAge(s.started)
+            age = age
         })
     end
+
+    return servers
 end
 
 Tab:Button({
-    Title = "Refresh Servers",
-    Desc = "Show Server ID / Players / Age",
+    Title = "🔄 Refresh Servers",
+    Desc = "Night Hub Fruit Finder",
     Callback = function()
-        FetchServers()
+        Tab:Clear() -- remove old buttons (WindUI supported)
 
-        for i, s in ipairs(ServerCache) do
-            print(
-                "[Server]",
-                s.id,
-                "| Players:", s.players,
-                "| Age:", s.age .. " min"
-            )
+        local servers = GetServers()
+
+        for _, s in ipairs(servers) do
+            local isFresh = s.age <= 10
+            local isVisited = VisitedServers[s.id]
+
+            local colorIcon = "🟢"
+            if not isFresh or isVisited then
+                colorIcon = "🔴"
+            end
+
+            Tab:Button({
+                Title = colorIcon .. " " .. s.players,
+                Desc = "Age: " .. s.age .. " min",
+                Callback = function()
+                    VisitedServers[s.id] = true
+                    TeleportService:TeleportToPlaceInstance(
+                        PlaceId,
+                        s.id,
+                        Players.LocalPlayer
+                    )
+                end
+            })
         end
     end
 })
