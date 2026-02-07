@@ -327,6 +327,7 @@ local Players = game:GetService("Players")
 
 local PLACE_ID = 2753915549
 local VisitedServers = {}
+local Loading = false
 
 local function FetchServers()
     local servers = {}
@@ -346,18 +347,32 @@ local function FetchServers()
     return servers
 end
 
--- 🔄 MAIN REFRESH BUTTON
+-- 🔄 REFRESH BUTTON
 Tab:Button({
     Title = "🔄 Refresh Servers",
-    Desc = "Create Server Buttons",
+    Desc = "Scanning servers...",
     Locked = false,
     Callback = function()
+        if Loading then return end
+        Loading = true
 
-        Tab:Clear() -- remove old server buttons
+        Tab:Clear()
 
+        -- Loading indicator
+        Tab:Button({
+            Title = "⏳ Loading...",
+            Desc = "Please wait",
+            Locked = true
+        })
+
+        task.wait(1.5)
+
+        Tab:Clear()
         local servers = FetchServers()
 
         for _, s in ipairs(servers) do
+            task.wait(0.2) -- 👈 delay like Night Hub
+
             local isFresh = s.age <= 10
             local isVisited = VisitedServers[s.id]
 
@@ -366,10 +381,9 @@ Tab:Button({
                 icon = "🔴"
             end
 
-            -- 🔘 SERVER BUTTON
-            Tab:Button({
+            local Button = Tab:Button({
                 Title = icon .. " Server",
-                Desc = 
+                Desc =
                     "Players: " .. s.players ..
                     " | Age: " .. s.age .. " min",
                 Locked = false,
@@ -383,6 +397,8 @@ Tab:Button({
                 end
             })
         end
+
+        Loading = false
     end
 })
 
