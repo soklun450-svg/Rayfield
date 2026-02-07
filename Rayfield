@@ -276,12 +276,12 @@ local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 
-local PlaceId = game.PlaceId
+local PLACE_ID = 2753915549
 local VisitedServers = {}
 
-local function GetServers()
+local function FetchServers()
     local servers = {}
-    local url = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+    local url = "https://games.roblox.com/v1/games/" .. PLACE_ID .. "/servers/Public?sortOrder=Asc&limit=100"
     local data = HttpService:JSONDecode(game:HttpGet(url))
 
     for _, s in ipairs(data.data) do
@@ -297,30 +297,37 @@ local function GetServers()
     return servers
 end
 
+-- 🔄 MAIN REFRESH BUTTON
 Tab:Button({
     Title = "🔄 Refresh Servers",
-    Desc = "Night Hub Fruit Finder",
+    Desc = "Create Server Buttons",
+    Locked = false,
     Callback = function()
-        Tab:Clear() -- remove old buttons (WindUI supported)
 
-        local servers = GetServers()
+        Tab:Clear() -- remove old server buttons
+
+        local servers = FetchServers()
 
         for _, s in ipairs(servers) do
             local isFresh = s.age <= 10
             local isVisited = VisitedServers[s.id]
 
-            local colorIcon = "🟢"
+            local icon = "🟢"
             if not isFresh or isVisited then
-                colorIcon = "🔴"
+                icon = "🔴"
             end
 
+            -- 🔘 SERVER BUTTON
             Tab:Button({
-                Title = colorIcon .. " " .. s.players,
-                Desc = "Age: " .. s.age .. " min",
+                Title = icon .. " Server",
+                Desc = 
+                    "Players: " .. s.players ..
+                    " | Age: " .. s.age .. " min",
+                Locked = false,
                 Callback = function()
                     VisitedServers[s.id] = true
                     TeleportService:TeleportToPlaceInstance(
-                        PlaceId,
+                        PLACE_ID,
                         s.id,
                         Players.LocalPlayer
                     )
