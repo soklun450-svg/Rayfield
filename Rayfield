@@ -264,7 +264,7 @@ local Button = Tab:Button({
 })
 
 local Tab = Window:Tab({
-    Title = "Main farm",
+    Title = "Fruits",
     Icon = "solar:home-2-bold", -- optional
     IconColor = Yellow,
     IconShape = "Square",
@@ -272,37 +272,49 @@ local Tab = Window:Tab({
     Locked = false,
 })
 
--- services
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
 
--- state
-local AutoFarmEat = false
+local PlaceId = game.PlaceId
+local ServerCache = {}
 
--- cached paths (IMPORTANT for speed)
-local ExercisePart = workspace.World.World2.Area7.Exercise["\232\140\132\229\173\144"]
+local function GetAge(started)
+    return math.floor((os.time() - started) / 60)
+end
 
-local Remote = ReplicatedStorage.Remote.Event.Game["[C-S]PlayerExercise"]
+local function FetchServers()
+    ServerCache = {}
 
--- WindUI Toggle
-Tab:Toggle({
-    Title = "Auto Farm Eat (FAST)",
-    Desc = "Auto Eat latest Area",
-    Icon = "",
-    Type = "Toggle",
-    Value = false,
-    Callback = function(state)
-        AutoFarmEat = state
+    local url = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+    local data = HttpService:JSONDecode(game:HttpGet(url))
 
-        if state then
-            task.spawn(function()
-                while AutoFarmEat and task.wait() do
-                    -- spam fast like redzlib v5
-                    Remote:FireServer(ExercisePart)
-                end
-            end)
+    for _, s in ipairs(data.data) do
+        table.insert(ServerCache, {
+            id = s.id,
+            players = s.playing .. "/" .. s.maxPlayers,
+            age = GetAge(s.started)
+        })
+    end
+end
+
+Tab:Button({
+    Title = "Refresh Servers",
+    Desc = "Show Server ID / Players / Age",
+    Callback = function()
+        FetchServers()
+
+        for i, s in ipairs(ServerCache) do
+            print(
+                "[Server]",
+                s.id,
+                "| Players:", s.players,
+                "| Age:", s.age .. " min"
+            )
         end
     end
 })
+
 WindUI:Notify({
     Title = "SLN Hub",
     Content = "",
