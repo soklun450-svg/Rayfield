@@ -263,6 +263,55 @@ local Button = Tab:Button({
     end
 })
 
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LP = Players.LocalPlayer
+
+local Remotes = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Net")
+local RegisterAttack = Remotes:WaitForChild("RE/RegisterAttack")
+local RegisterHit = Remotes:WaitForChild("RE/RegisterHit")
+
+local AutoM1 = false
+
+Tab:Toggle({
+    Title = "Auto M1 + Hit",
+    Desc = "Auto attack NPCs & Players (Fast)",
+    Icon = "",
+    Type = "Toggle",
+    Value = false,
+    Callback = function(state)
+        AutoM1 = state
+
+        if state then
+            task.spawn(function()
+                while AutoM1 do
+                    -- M1 Attack
+                    RegisterAttack:FireServer(0.15)
+
+                    -- Collect targets
+                    local Targets = {}
+
+                    for _, v in pairs(workspace:GetDescendants()) do
+                        if v:IsA("Model")
+                        and v:FindFirstChild("Humanoid")
+                        and v:FindFirstChild("HumanoidRootPart")
+                        and v ~= LP.Character then
+                            table.insert(Targets, v.HumanoidRootPart)
+                        end
+                    end
+
+                    -- Register Hit
+                    if #Targets > 0 then
+                        RegisterHit:FireServer(Targets)
+                    end
+
+                    task.wait()
+                end
+            end)
+        end
+    end
+})
+
 local Tab = Window:Tab({
     Title = "Fruits",
     Icon = "solar:home-2-bold", -- optional
